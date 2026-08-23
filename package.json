@@ -4,14 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node-dev --transpile-only src/server.ts",
+    "dev": "ts-node-dev --transpile-only src/server.ts",
+    "worker": "ts-node-dev --transpile-only src/worker.ts",
+    "test": "DATABASE_URL_TEST=\"postgresql://taskflow:taskflow_password@localhost:5432/taskflow_test\" jest --runInBand --forceExit",
+    "test:watch": "DATABASE_URL_TEST=\"postgresql://taskflow:taskflow_password@localhost:5432/taskflow_test\" jest --watch",
+    "test:coverage": "DATABASE_URL_TEST=\"postgresql://taskflow:taskflow_password@localhost:5432/taskflow_test\" jest --coverage --runInBand --forceExit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@types/pg": "^8.23.1",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.2.0",
     "cors": "^2.8.6",
@@ -21,6 +28,8 @@
     "helmet": "^8.3.0",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,11 +39,15 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
     "@types/supertest": "^7.2.1",
+    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.4.2",
     "prisma": "^7.9.1",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "npx ts-node-dev --transpile-only prisma/seed.ts"
   }
 }

@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Role {
+  org_admin
+  member
+}
+
+enum Status {
+  todo
+  in_progress
+  review
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+  urgent
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+/// Users table: stores user identity and security details
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  org_members      OrgMember[]
+  task_assignments TaskAssignment[]
+  comments         Comment[]
+  refresh_tokens   RefreshToken[]
+
+  @@map("users")
+}
+
+/// Organizations table: tenant boundaries
+model Organization {
+  id         String   @id @default(uuid())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  members  OrgMember[]
+  projects Project[]
+
+  @@map("organizations")
+}
+
+/// OrgMembers table: connects users to organizations and assigns roles
+model OrgMember {
+  id              String   @id @default(uuid())
+  organization_id String
+  user_id         String
+  role            Role     @default(member)
+  created_at      DateTime @default(now())
+
+  // Foreign key cascade decisions:
+  // - Organization deletion cascades to clean up membership records.
+  // - User deletion cascades to clean up membership records.
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate membership of a user in the same organization
+  @@unique([organization_id, user_id])
+  // Index for fast organization member lookup and user org lookup
+  @@index([organization_id])
+  @@index([user_id])
+  @@map("org_members")
+}
+
+/// Projects table: projects belonging to an organization
+model Project {
+  id              String    @id @default(uuid())
+  organization_id String
+  name            String
+  description     String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  // Foreign key cascade decisions:
+  // - Organization deletion cascades to clean up projects.
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  // Relations
+  tasks Task[]
+
+  // Index for listing projects by organization
+  @@index([organization_id])
+  @@map("projects")
+}
+
+/// Tasks table: tasks assigned within projects
+model Task {
+  id          String    @id @default(uuid())
+  project_id  String
+  title       String
+  description String?
+  status      Status    @default(todo)
+  priority    Priority  @default(medium)
+  due_date    DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  // Foreign key cascade decisions:
+  // - Project deletion cascades to clean up tasks.
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  // Relations
+  assignments TaskAssignment[]
+  comments    Comment[]
+
+  // Useful indexes for querying, filtering, and sorting tasks
+  @@index([project_id])
+  @@index([status])
+  @@index([priority])
+  @@index([due_date])
+  @@map("tasks")
+}
+
+/// TaskAssignments table: connects tasks to assigned users
+model TaskAssignment {
+  id          String   @id @default(uuid())
+  task_id     String
+  user_id     String
+  assigned_at DateTime @default(now())
+
+  // Foreign key cascade decisions:
+  // - Task deletion cascades to clean up task assignments.
+  // - User deletion uses RESTRICT to prevent accidental removal of users with assignment history.
+  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  // Prevent duplicate assignment of the same user to the same task
+  @@unique([task_id, user_id])
+  // Indexes for querying task assignees and user tasks
+  @@index([task_id])
+  @@index([user_id])
+  @@map("task_assignments")
+}
+
+/// Comments table: comments posted on tasks
+model Comment {
+  id         String   @id @default(uuid())
+  task_id    String
+  user_id    String
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Foreign key cascade decisions:
+  // - Task deletion cascades to remove comments.
+  // - User deletion uses RESTRICT to preserve comment history.
+  task Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  // Index for retrieving comments on a task chronologically
+  @@index([task_id])
+  @@map("comments")
+}
+
+/// RefreshTokens table: refresh tokens stored for revocation management
+model RefreshToken {
+  id         String    @id @default(uuid())
+  user_id    String
+  token_hash String    @unique
+  expires_at DateTime
+  revoked_at DateTime?
+  created_at DateTime  @default(now())
+
+  // Foreign key cascade decisions:
+  // - User deletion cascades to remove refresh tokens.
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Indexes for fast lookup of tokens by user and by token hash
+  @@index([user_id])
+  @@index([token_hash])
+  @@map("refresh_tokens")
+}
