@@ -3,7 +3,7 @@
   "info": {
     "title": "TaskFlow Backend API",
     "version": "1.0.0",
-    "description": "Multi-Tenant Project & Task Management REST API with Asynchronous Notification Queues and RBAC Security."
+    "description": "Multi-Tenant Project & Task Management REST API with Asynchronous Notification Queues, Member Management, and RBAC Security."
   },
   "servers": [
     {
@@ -28,6 +28,17 @@
           "email": { "type": "string", "format": "email" },
           "name": { "type": "string" },
           "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrgMember": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "role": { "type": "string", "enum": ["org_admin", "member"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/User" }
         }
       },
       "Project": {
@@ -179,6 +190,88 @@
         },
         "responses": {
           "200": { "description": "Token Revoked Successfully" }
+        }
+      }
+    },
+    "/organizations/members": {
+      "get": {
+        "summary": "List Members of Authenticated User's Organization",
+        "tags": ["Members"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of Organization Members" }
+        }
+      },
+      "post": {
+        "summary": "Add Member to Organization (Requires org_admin Role)",
+        "tags": ["Members"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "role": { "type": "string", "enum": ["org_admin", "member"] },
+                  "name": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Member Added Successfully" },
+          "403": { "description": "Forbidden (Requires org_admin role)" }
+        }
+      }
+    },
+    "/organizations/members/{userId}": {
+      "get": {
+        "summary": "Get Member Details by User ID",
+        "tags": ["Members"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Member Details" },
+          "404": { "description": "Member Not Found" }
+        }
+      },
+      "patch": {
+        "summary": "Update Member Role (Requires org_admin Role)",
+        "tags": ["Members"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["role"],
+                "properties": { "role": { "type": "string", "enum": ["org_admin", "member"] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Member Role Updated" },
+          "400": { "description": "Cannot Demote Last Admin" },
+          "403": { "description": "Forbidden (Requires org_admin role)" }
+        }
+      },
+      "delete": {
+        "summary": "Remove Member from Organization (Requires org_admin Role)",
+        "tags": ["Members"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Member Removed Successfully" },
+          "400": { "description": "Cannot Remove Last Admin" },
+          "403": { "description": "Forbidden (Requires org_admin role)" }
         }
       }
     },

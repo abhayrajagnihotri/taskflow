@@ -4,6 +4,7 @@ import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import openapiSpec from './docs/openapi.json';
 import { authRoutes } from './modules/auth/auth.routes';
+import { orgRoutes } from './modules/orgs/org.routes';
 import { projectRoutes } from './modules/projects/project.routes';
 import { taskRoutes } from './modules/tasks/task.routes';
 import { jobRoutes } from './modules/jobs/job.routes';
@@ -21,6 +22,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/organizations', orgRoutes);
 app.use('/projects', projectRoutes);
 app.use('/tasks', taskRoutes);
 app.use('/jobs', jobRoutes);

@@ -95,3 +95,15 @@ export class JobNotFoundError extends AppError {
     super(message, 404, 'JOB_NOT_FOUND');
   }
 }
+
+export class MemberNotFoundError extends AppError {
+  constructor(message: string = 'Organization member not found') {
+    super(message, 404, 'MEMBER_NOT_FOUND');
+  }
+}
+
+export class CannotRemoveLastAdminError extends AppError {
+  constructor(message: string = 'Cannot remove or demote the last org_admin of the organization') {
+    super(message, 400, 'CANNOT_REMOVE_LAST_ADMIN');
+  }
+}
