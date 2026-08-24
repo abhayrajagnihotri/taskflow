@@ -11,8 +11,8 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().default('default_jwt_refresh_secret_key_taskflow_dev'),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL: z.string().default('7d'),
-  REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.string().default('6379').transform((val) => parseInt(val, 10)),
+  REDIS_HOST: z.string().min(1, 'REDIS_HOST is required'),
+  REDIS_PORT: z.string().min(1, 'REDIS_PORT is required').transform((val) => parseInt(val, 10)),
 });
 
 const parseEnv = () => {
