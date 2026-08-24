@@ -13,6 +13,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL: z.string().default('7d'),
   REDIS_HOST: z.string().min(1, 'REDIS_HOST is required'),
   REDIS_PORT: z.string().min(1, 'REDIS_PORT is required').transform((val) => parseInt(val, 10)),
+  REDIS_PASSWORD: z.string().min(1, 'REDIS_PASSWORD is required'),
 });
 
 const parseEnv = () => {
